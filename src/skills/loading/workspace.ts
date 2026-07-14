@@ -1,4 +1,4 @@
-// Workspace skill loading helpers discover and load skills from workspace directories.
+﻿// Workspace skill loading helpers discover and load skills from workspace directories.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -39,6 +39,7 @@ import { resolveOpenClawMetadata, resolveSkillInvocationPolicy } from "./frontma
 import { loadSkillsFromDirSafe, readSkillFrontmatterSafe } from "./local-loader.js";
 import { resolvePluginSkillDirs } from "./plugin-skills.js";
 import { serializeByKey } from "./serialize.js";
+import { buildBehaviorPolicyPrompt, resolveBehaviorRules } from "../../security/behavior-policy.js";
 import { formatSkillsForPrompt, type Skill } from "./skill-contract.js";
 import { resolveSkillTelemetrySource } from "./source.js";
 import { resolveAllowedSkillSymlinkTargetRealPaths, tryRealpath } from "./symlink-targets.js";
@@ -53,9 +54,9 @@ const MAX_SKILL_SOURCE_ORIGIN_BYTES = 16 * 1024;
  * reduce system prompt token usage while matching host file-tool expansion.
  *
  * Example: `/Users/alice/.bun/.../skills/github/SKILL.md`
- * → `~/.bun/.../skills/github/SKILL.md`
+ * â†’ `~/.bun/.../skills/github/SKILL.md`
  *
- * Saves ~5–6 tokens per skill path × N skills ≈ 400–600 tokens total.
+ * Saves ~5â€“6 tokens per skill path Ã— N skills â‰ˆ 400â€“600 tokens total.
  */
 function resolveUserHomeDir(): string | undefined {
   return resolveOsHomeDir(process.env, os.homedir);
@@ -1390,6 +1391,7 @@ function buildRenderedSkillsPrompt(params: {
   skills: Skill[];
   total: number;
   format: SkillsPromptFormat;
+  config?: OpenClawConfig;
 }): string {
   const truncated = params.skills.length < params.total;
   const limitNote = buildSkillsLimitNote({
@@ -1403,7 +1405,7 @@ function buildRenderedSkillsPrompt(params: {
       ? formatSkillsCompact(params.skills, {
           descriptionMaxChars: params.format.descriptionMaxChars,
         })
-      : formatSkillsForPrompt(params.skills);
+      : formatSkillsForPrompt(params.skills, buildBehaviorPolicyPrompt(resolveBehaviorRules(params.config)) || undefined);
   return [params.remoteNote, limitNote, catalog].filter(Boolean).join("\n");
 }
 
@@ -1438,6 +1440,7 @@ function applySkillsPromptLimits(params: {
       format: { kind: "compact", descriptionMaxChars },
     }).length <= limits.maxSkillsPromptChars;
 
+  if (!fitsFull(skillsForPrompt)) {
   if (!fitsFull(skillsForPrompt)) {
     // Identity coverage takes priority over descriptions. Find the same largest
     // name/location/version prefix as the previous compact format before using
@@ -1578,6 +1581,7 @@ function resolveWorkspaceSkillPromptState(
     skills: skillsForPrompt,
     total: resolvedSkills.length,
     format,
+    config: opts?.config,
   });
   return { eligible, prompt, resolvedSkills };
 }
