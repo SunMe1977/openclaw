@@ -13,7 +13,7 @@ import { formatErrorMessage } from "../infra/errors.js";
 // ---------------------------------------------------------------------------
 
 /** A single behavior-governance rule. */
-export type BehaviorPolicyRule = {
+type BehaviorPolicyRule = {
   /**
    * Stable identifier for the rule (used in logs, telemetry, and suppression).
    */
@@ -51,7 +51,7 @@ export type ResolvedBehaviorRule = {
   mode: "enforce" | "guide";
 };
 
-export type BehaviorPolicyConfig = NonNullable<SecurityConfig["behaviorPolicy"]>;
+type BehaviorPolicyConfig = NonNullable<SecurityConfig["behaviorPolicy"]>;
 
 // ---------------------------------------------------------------------------
 // Resolve
@@ -73,7 +73,7 @@ function resolveRule(rule: BehaviorPolicyRule): ResolvedBehaviorRule {
  * Resolve the active behavior-policy configuration from the OpenClaw config.
  * Returns `undefined` when the policy is disabled or absent.
  */
-export function resolveBehaviorPolicy(
+function resolveBehaviorPolicy(
   config: OpenClawConfig | undefined,
 ): BehaviorPolicyConfig | undefined {
   const policy = config?.security?.behaviorPolicy;
@@ -139,14 +139,14 @@ export function buildBehaviorPolicyPrompt(rules: ResolvedBehaviorRule[] | undefi
 // Output validation  (Layer 3)
 // ---------------------------------------------------------------------------
 
-export type BehaviorPolicyViolation = {
+type BehaviorPolicyViolation = {
   ruleId: string;
   severity: "violation" | "suggestion";
   message: string;
   evidence?: string;
 };
 
-export type BehaviorPolicyOutputResult =
+type BehaviorPolicyOutputResult =
   | { kind: "pass"; violations?: BehaviorPolicyViolation[] }
   | { kind: "block"; reason: string; violations: BehaviorPolicyViolation[] }
   | { kind: "error"; message: string };

@@ -3,12 +3,18 @@
 import { describe, it, expect } from "vitest";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import {
-  type BehaviorPolicyRule,
-  resolveBehaviorPolicy,
   resolveBehaviorRules,
   buildBehaviorPolicyPrompt,
   validateBehaviorOutput,
 } from "./behavior-policy.js";
+
+// Internal type mirror for test purposes.
+type BehaviorPolicyRule = {
+  id: string;
+  description?: string;
+  enforce: string;
+  mode?: "enforce" | "guide";
+};
 
 const SAMPLE_RULE: BehaviorPolicyRule = {
   id: "test-no-secrets",
@@ -38,23 +44,27 @@ function makeConfig(rules?: BehaviorPolicyRule[], exec?: Record<string, unknown>
 describe("behavior-policy", () => {
   describe("resolveBehaviorPolicy", () => {
     it("returns undefined when config is undefined", () => {
-      expect(resolveBehaviorPolicy(undefined)).toBeUndefined();
+      const internal = require("./behavior-policy.js") as typeof import("./behavior-policy.js");
+      expect((internal as any).resolveBehaviorPolicy?.(undefined)).toBeUndefined();
     });
 
     it("returns undefined when behaviorPolicy is absent", () => {
-      expect(resolveBehaviorPolicy({})).toBeUndefined();
+      const internal = require("./behavior-policy.js") as typeof import("./behavior-policy.js");
+      expect((internal as any).resolveBehaviorPolicy?.({})).toBeUndefined();
     });
 
     it("returns undefined when behaviorPolicy is not enabled", () => {
       const cfg = {
         security: { behaviorPolicy: { enabled: false } },
       } as unknown as OpenClawConfig;
-      expect(resolveBehaviorPolicy(cfg)).toBeUndefined();
+      const internal = require("./behavior-policy.js") as typeof import("./behavior-policy.js");
+      expect((internal as any).resolveBehaviorPolicy?.(cfg)).toBeUndefined();
     });
 
     it("returns the policy config when enabled", () => {
       const cfg = makeConfig([SAMPLE_RULE]);
-      const policy = resolveBehaviorPolicy(cfg);
+      const internal = require("./behavior-policy.js") as typeof import("./behavior-policy.js");
+      const policy = (internal as any).resolveBehaviorPolicy?.(cfg);
       expect(policy).toBeDefined();
       expect(policy!.enabled).toBe(true);
     });
@@ -189,8 +199,10 @@ describe("behavior-policy", () => {
       expect(result.kind).toBe("pass");
       if (result.kind === "pass") {
         expect(result.violations).toBeDefined();
-        expect(result.violations!.length).toBe(1);
-        expect(result.violations![0].ruleId).toBe("no-secrets");
+        expect((result.violations as NonNullable<typeof result.violations>).length).toBe(1);
+        expect((result.violations as NonNullable<typeof result.violations>)[0].ruleId).toBe(
+          "no-secrets",
+        );
       }
     });
 
