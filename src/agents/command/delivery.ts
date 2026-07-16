@@ -27,7 +27,6 @@ import { createReplyPrefixContext } from "../../channels/reply-prefix.js";
 import { createOutboundSendDeps, type CliDeps } from "../../cli/outbound-send-deps.js";
 import type { SessionEntry } from "../../config/sessions.js";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
-import { validateBehaviorOutput, resolveBehaviorRules } from "../../security/behavior-policy.js";
 import { formatErrorMessage, toErrorObject } from "../../infra/errors.js";
 import {
   resolveAgentDeliveryPlanWithSessionRoute,
@@ -46,6 +45,7 @@ import {
 import type { OutboundSessionContext } from "../../infra/outbound/session-context.js";
 import { hasReplyPayloadContent } from "../../interactive/payload.js";
 import { type RuntimeEnv, writeRuntimeJson } from "../../runtime.js";
+import { validateBehaviorOutput, resolveBehaviorRules } from "../../security/behavior-policy.js";
 import { isInternalMessageChannel } from "../../utils/message-channel.js";
 import type { MessagingToolSend } from "../embedded-agent-messaging.types.js";
 import type { EmbeddedAgentRunMeta } from "../embedded-agent-runner/types.js";
@@ -414,7 +414,7 @@ async function filterAlreadyDeliveredReplyPayloads(params: {
         output: outputText,
       }).catch((err: unknown) => {
         // Log but never block delivery — soft validation for now
-        console.warn(`behavior-policy validation failed: ${err}`);
+        console.warn("behavior-policy validation failed: " + String(err));
       });
     }
   }
