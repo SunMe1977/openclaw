@@ -19,7 +19,7 @@ const MAX_NAME_LENGTH = 64;
 /** Max description length per spec */
 const MAX_DESCRIPTION_LENGTH = 1024;
 
-export interface SkillFrontmatter {
+interface SkillFrontmatter {
   name?: string;
   description?: string;
   "disable-model-invocation"?: boolean;
@@ -37,7 +37,7 @@ export interface Skill {
   disableModelInvocation: boolean;
 }
 
-export interface LoadSkillsResult {
+interface LoadSkillsResult {
   skills: Skill[];
   diagnostics: ResourceDiagnostic[];
 }
@@ -83,13 +83,6 @@ function validateDescription(description: string | undefined): string[] {
   return errors;
 }
 
-export interface LoadSkillsFromDirOptions {
-  /** Directory to scan for skills */
-  dir: string;
-  /** Source identifier for these skills */
-  source: string;
-}
-
 function createSkillSourceInfo(filePath: string, baseDir: string, source: string): SourceInfo {
   switch (source) {
     case "user":
@@ -112,19 +105,6 @@ function createSkillSourceInfo(filePath: string, baseDir: string, source: string
     default:
       return createSyntheticSourceInfo(filePath, { source, baseDir });
   }
-}
-
-/**
- * Load skills from a directory.
- *
- * Discovery rules:
- * - if a directory contains SKILL.md, treat it as a skill root and do not recurse further
- * - otherwise, load direct .md children in the root
- * - recurse into subdirectories to find SKILL.md
- */
-export function loadSkillsFromDir(options: LoadSkillsFromDirOptions): LoadSkillsResult {
-  const { dir, source } = options;
-  return loadSkillsFromDirInternal(dir, source, true);
 }
 
 function loadSkillsFromDirInternal(
@@ -302,7 +282,7 @@ export function formatSkillsForPrompt(
   return formatSkillContractForPrompt(visibleSkills, behaviorPrompt || undefined);
 }
 
-export interface LoadSkillsOptions {
+interface LoadSkillsOptions {
   /** Working directory for project-local skills. */
   cwd: string;
   /** Agent config directory for global skills. */
