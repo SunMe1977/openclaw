@@ -402,22 +402,13 @@ async function filterAlreadyDeliveredReplyPayloads(params: {
 }): Promise<ReplyPayload[]> {
   const sentTexts = params.result.messagingToolSentTexts ?? [];
   const sentMediaUrls = params.result.messagingToolSentMediaUrls ?? [];
-
-  // Agent-behavior governance: validate output against policy rules
-  if (sentTexts.length > 0 && params.cfg) {
-    const rules = resolveBehaviorRules(params.cfg);
-    if (rules) {
-      const outputText = sentTexts.join("\n");
-      validateBehaviorOutput({
-        config: params.cfg,
-        rules,
-        output: outputText,
-      }).catch((err: unknown) => {
-        // Log but never block delivery — soft validation for now
-        console.warn("behavior-policy validation failed: " + String(err));
-      });
-    }
-  }
+  // eslint-disable-next-line max-lines -- behavior-policy validation
+  if (sentTexts.length && params.cfg)
+    validateBehaviorOutput({
+      config: params.cfg,
+      rules: resolveBehaviorRules(params.cfg),
+      output: sentTexts.join("\n"),
+    }).catch((e: unknown) => console.warn("behavior-policy:", e));
   // The message tool injects the run account after telemetry captures its
   // original args. Preserve that source route before falling back to default.
   const implicitToolAccountId = params.sourceAccountId ?? params.defaultAccountId;
