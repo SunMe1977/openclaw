@@ -27,6 +27,7 @@ import { createReplyPrefixContext } from "../../channels/reply-prefix.js";
 import { createOutboundSendDeps, type CliDeps } from "../../cli/outbound-send-deps.js";
 import type { SessionEntry } from "../../config/sessions.js";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import { validateBehaviorOutput, resolveBehaviorRules } from "../../security/behavior-policy.js";
 import { formatErrorMessage, toErrorObject } from "../../infra/errors.js";
 import {
   resolveAgentDeliveryPlanWithSessionRoute,
@@ -401,6 +402,22 @@ async function filterAlreadyDeliveredReplyPayloads(params: {
 }): Promise<ReplyPayload[]> {
   const sentTexts = params.result.messagingToolSentTexts ?? [];
   const sentMediaUrls = params.result.messagingToolSentMediaUrls ?? [];
+
+  // Agent-behavior governance: validate output against policy rules
+  if (sentTexts.length > 0 && params.cfg) {
+    const rules = resolveBehaviorRules(params.cfg);
+    if (rules) {
+      const outputText = sentTexts.join("\n");
+      validateBehaviorOutput({
+        config: params.cfg,
+        rules,
+        output: outputText,
+      }).catch((err: unknown) => {
+        // Log but never block delivery — soft validation for now
+        console.warn(`behavior-policy validation failed: ${err}`);
+      });
+    }
+  }
   // The message tool injects the run account after telemetry captures its
   // original args. Preserve that source route before falling back to default.
   const implicitToolAccountId = params.sourceAccountId ?? params.defaultAccountId;
